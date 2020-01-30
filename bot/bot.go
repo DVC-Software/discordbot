@@ -9,8 +9,12 @@ import (
 var BotID string
 var bot *discordgo.Session
 
-func GetBot() (*discordgo.Session, string) {
-	return bot, BotID
+func GetBot() *discordgo.Session {
+	return bot
+}
+
+func GetBotID() string {
+	return BotID
 }
 
 func Start() {
@@ -18,11 +22,16 @@ func Start() {
 	if err != nil {
 		panic(err.Error())
 	}
-
 	u, err := bot.User("@me")
 	if err != nil {
 		panic(err.Error())
 	}
+	// configure settings
+	bot.ShouldReconnectOnError = true
+	bot.LogLevel = 1
+
+	// Add handlers
+	bot.AddHandler(MessageHandler)
 
 	BotID = u.ID
 	err = bot.Open()

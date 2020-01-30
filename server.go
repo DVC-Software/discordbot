@@ -42,7 +42,6 @@ func main() {
 
 	fmt.Println("starting server...")
 	bot.Start()
-
 	if err := srv.ListenAndServe(); err != nil {
 		panic(err.Error())
 	}
