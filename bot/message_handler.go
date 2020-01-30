@@ -12,15 +12,15 @@ import (
 func NormalizeMessage(message string) string {
 	// filter out prefixing @ mentions before the ! command prefix
 	fmt.Println(message)
-	front_mention := regexp.MustCompile(`^<@!+?(.*?)!(.*)$`)
-	rear_mention := regexp.MustCompile(`!(.*)<@!+?(.*?)$`)
-	multiple_prefixes := regexp.MustCompile(`(.*)!!+(.*)`)
+	front_mention := regexp.MustCompile(`^<@!*(.*?)/(.*)$`)
+	rear_mention := regexp.MustCompile(`/(.*)<@!*(.*?)$`)
+	multiple_prefixes := regexp.MustCompile(`(.*)//+(.*)`)
 	if front_mention.MatchString(message) {
 		fmt.Println("front mention matched")
-		message = front_mention.ReplaceAllString(message, "!$2")
+		message = front_mention.ReplaceAllString(message, "/$2")
 	} else if rear_mention.MatchString(message) {
 		fmt.Println("rearmention matched")
-		message = rear_mention.ReplaceAllString(message, "!$1")
+		message = rear_mention.ReplaceAllString(message, "/$1")
 	}
 	if multiple_prefixes.MatchString(message) {
 		fmt.Println("multiple prefixes matched")
@@ -49,14 +49,19 @@ func ValidateMessage(m *discordgo.MessageCreate) (bool, string) {
 			return false, ""
 		}
 	}
-	if !strings.HasPrefix(m.Content, "!") || m.Content == "!" {
-		return false, "Please use command staring with a '!'"
+	if !strings.HasPrefix(m.Content, "/") || m.Content == "/" {
+		return false, "Please use command staring with a '/'"
 	}
 	return true, ""
 }
 
 func ParseCommand(message string) string {
-	return ""
+	prefix := regexp.MustCompile(`^/(.*)$`)
+	if prefix.MatchString(message) {
+		fmt.Println("command prefix matched")
+		message = prefix.ReplaceAllString(message, "$1")
+	}
+	return message
 }
 
 func MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -74,6 +79,11 @@ func MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	fmt.Println(string(msgJson))
 	// use regex to distinguish different commands
 	switch command := ParseCommand(m.Content); command {
-	case "user_create":
+	case "create member":
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Create member command is not implemented now!")
+	case "hello":
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Hello, "+m.Author.Username)
+	default:
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Oops, this is not a valid command!")
 	}
 }
