@@ -1,0 +1,11 @@
+version: "3"
+services: 
+  dvc_discord_api_server:
+    build:
+      context: ..
+    container_name: dvc_discord_api_server
+    ports:
+      - "7080:7080"
+    tty: true
+    env_file: 
+      - ${PWD}/docker/dev-env.rc
