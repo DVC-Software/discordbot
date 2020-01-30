@@ -49,7 +49,7 @@ func ValidateMessage(m *discordgo.MessageCreate) (bool, string) {
 			return false, ""
 		}
 	}
-	if !strings.HasPrefix(m.Content, prefix) || m.Content == "!" {
+	if !strings.HasPrefix(m.Content, "!") || m.Content == "!" {
 		return false, "Please use command staring with a '!'"
 	}
 	return true, ""
