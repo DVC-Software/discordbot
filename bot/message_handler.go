@@ -3,10 +3,10 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/DVC-Software/discordbot/execution"
+	"github.com/bwmarrin/discordgo"
 	"regexp"
 	"strings"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 func NormalizeMessage(message string) string {
@@ -55,13 +55,30 @@ func ValidateMessage(m *discordgo.MessageCreate) (bool, string) {
 	return true, ""
 }
 
-func ParseCommand(message string) string {
+// return the eparsed command and remove that command from the message
+// Return tha matched command and the striped message
+func ParseCommand(message string) (string, string) {
 	prefix := regexp.MustCompile(`^/(.*)$`)
+	// every message should have the prefix now
 	if prefix.MatchString(message) {
 		fmt.Println("command prefix matched")
 		message = prefix.ReplaceAllString(message, "$1")
 	}
-	return message
+	// check create member
+	hello := regexp.MustCompile(`^hello$`)
+	if hello.MatchString(message) {
+		fmt.Println("hello matched")
+		return "hello", ""
+	}
+	// check create member
+	create_member := regexp.MustCompile(`^create member[\s]*(.*)$`)
+	if create_member.MatchString(message) {
+		fmt.Println("create member matched")
+		message = create_member.ReplaceAllString(message, "$1")
+		return "create_member", message
+	}
+
+	return "invalid", message
 }
 
 func MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -78,9 +95,12 @@ func MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msgJson, _ := json.Marshal(m)
 	fmt.Println(string(msgJson))
 	// use regex to distinguish different commands
-	switch command := ParseCommand(m.Content); command {
-	case "create member":
-		_, _ = s.ChannelMessageSend(m.ChannelID, "Create member command is not implemented now!")
+	command, message := ParseCommand(m.Content)
+	switch command {
+	case "create_member":
+		args := []string{message, m.Author.ID}
+		msg, err := execution.CreateMember(args)
+		_, _ = s.ChannelMessageSend(m.ChannelID, msg+"\n"+err)
 	case "hello":
 		_, _ = s.ChannelMessageSend(m.ChannelID, "Hello, "+m.Author.Username)
 	default:
