@@ -17,6 +17,14 @@ type MemberRequest struct {
 	CreatedFrom   string
 }
 
+type MemberInfo struct {
+	ID             uint
+	Name           string
+	Positions      []string
+	TrainingStatus int
+	IsStaff        bool
+}
+
 var endpoint = config.DVCApiServerEndpoint
 
 func CreateMember(args []string) (string, string) {
@@ -37,19 +45,38 @@ func CreateMember(args []string) (string, string) {
 	}
 	// parse returned obj
 	data, _ := ioutil.ReadAll(resp.Body)
-	var member map[string]interface{}
-	json.Unmarshal(data, &member)
-	profile := member["Profile"].(map[string]interface{})
-	discordUserID := member["DiscordUserID"].(map[string]interface{})
-	if discordUserID["String"] != args[1] || profile["Name"] != args[0] || discordUserID["Valid"] != true {
+	var memberInfo MemberInfo
+	json.Unmarshal(data, &memberInfo)
+	if memberInfo.Name != args[0] {
 		// debug
-		fmt.Println(member["DiscordUserID"], profile["Name"])
 		return "Failed to create member " + args[0], "Invalid response data"
 	}
 
-	return resultToString(member["ID"], profile), ""
+	return resultToString(memberInfo.ID, memberInfo.Name, memberInfo.Positions[0]), ""
 }
 
-func resultToString(ID interface{}, profile map[string]interface{}) string {
-	return fmt.Sprintf("Member ID : %v\nName : %v\nFrom now on, I'll call you %v!", ID, profile["Name"], profile["Name"])
+func resultToString(ID uint, name string, position string) string {
+	return fmt.Sprintf("Member ID : %d\nName : %v\nPosition: %s\nFrom now on, I'll call you %v!", ID, name, position, name)
+}
+
+func IdentifyMember(id string) (bool, MemberInfo) {
+	var memberInfo MemberInfo
+	resp, err := http.Get(endpoint + "/member/info/" + id)
+	if err != nil || resp.StatusCode != 200 {
+		if resp.Body != nil {
+			data, _ := ioutil.ReadAll(resp.Body)
+			var respError Error
+			json.Unmarshal(data, &respError)
+			fmt.Println(respError.ErrorMessage)
+		}
+		return false, memberInfo
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(data))
+	json.Unmarshal(data, &memberInfo)
+	if memberInfo.ID == 0 || memberInfo.Name == "" {
+		fmt.Println(memberInfo.ID, memberInfo.Name)
+		return false, memberInfo
+	}
+	return true, memberInfo
 }

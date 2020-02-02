@@ -102,7 +102,14 @@ func MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		msg, err := execution.CreateMember(args)
 		_, _ = s.ChannelMessageSend(m.ChannelID, msg+"\n"+err)
 	case "hello":
-		_, _ = s.ChannelMessageSend(m.ChannelID, "Hello, "+m.Author.Username)
+		valid, info := execution.IdentifyMember(m.Author.ID)
+		var msg string
+		if valid {
+			msg = info.Name
+		} else {
+			msg = m.Author.Username
+		}
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Hello, "+msg)
 	default:
 		_, _ = s.ChannelMessageSend(m.ChannelID, "Oops, this is not a valid command!")
 	}
